@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import { AppStyled, FirstMessage } from './App.styled';
 import { Searchbar } from '../Searchbar';
 import { ImageGallery } from '../ImageGallery';
@@ -9,40 +8,47 @@ import 'react-toastify/dist/ReactToastify.css';
 import { SkeletonTheme } from 'react-loading-skeleton';
 import { GallerySkeleton } from 'components/GallerySkeleton';
 
+import { useState, useEffect } from 'react';
+
 const root = document.querySelector('#root');
 
-export class App extends Component {
-  state = {
-    searchInput: '',
-    pictures: [],
-    page: 1,
-    totalPictures: 0,
-    status: 'idle',
-  };
+export const App = () => {
+  const [searchInput, setSearchInput] = useState('');
+  const [pictures, setPictures] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPictures, setTotalPictures] = useState(0);
+  const [status, setStatus] = useState('idle');
 
-  async componentDidUpdate(_, pS) {
-    // Пошук
-    if (pS.searchInput !== this.state.searchInput) {
-      console.log('search');
-      await this.setState({ page: 1, pictures: [] });
-      this.requestForPic();
-      root.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => {
+    if (searchInput === '') {
+      return;
     }
 
-    // Пагінація
-    if (pS.page !== this.state.page && this.state.page > 1) {
-      console.log('load more');
-      this.requestForPic();
+    async function reset() {
+      await setPage(1);
+      await setPictures([]);
     }
+
+    console.log('search');
+    reset();
+    requestForPic();
+  }, [searchInput]);
+
+  useEffect(() => {
+    if (page === 1) {
+      return;
+    }
+
+    console.log('load more');
+    requestForPic();
+  }, [page]);
+
+  function changePage() {
+    setPage(pS => pS + 1);
   }
 
-  changePage = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
-  };
-
-  requestForPic = () => {
-    const { page, searchInput } = this.state;
-    this.setState({ status: 'pending' });
+  function requestForPic() {
+    setStatus('pending');
 
     fetchPic({ query: searchInput, page })
       .then(({ hits, totalHits }) => {
@@ -55,23 +61,22 @@ export class App extends Component {
           );
         }
 
-        this.setState(({ pictures }) => ({
-          status: 'resolved',
-          pictures: [...pictures, ...hits],
-          totalPictures: totalHits,
-        }));
+        setPictures(pS => [...pS, ...hits]);
+        setTotalPictures(totalHits);
+        setStatus('resolved');
 
         if (page === 1) {
           toast.success(`По вашему запросу найдено ${totalHits} картинок`);
+          root.scrollIntoView({ behavior: 'smooth' });
         }
       })
       .catch(({ message }) => {
-        this.setState({ status: 'rejected' });
+        setStatus('rejected');
         toast.error(message);
       });
-  };
+  }
 
-  changeSearchInput = e => {
+  function changeSearchInput(e) {
     e.preventDefault();
 
     const { value } = e.currentTarget.elements.search;
@@ -79,36 +84,32 @@ export class App extends Component {
     const inputValue = value.trim();
 
     if (inputValue) {
-      this.setState({ searchInput: inputValue });
+      setSearchInput(inputValue);
       return;
     }
 
     toast.warn('Пожалуйста, введите что-то!!!');
-  };
-
-  render() {
-    const { pictures, totalPictures, status } = this.state;
-
-    return (
-      <SkeletonTheme baseColor="#2c2c2c" highlightColor="#3d3d3d">
-        <AppStyled>
-          <Searchbar onSubmit={this.changeSearchInput} />
-
-          {status === 'idle' && (
-            <FirstMessage>Enter key words for image search!</FirstMessage>
-          )}
-
-          <ImageGallery pictures={pictures} />
-
-          {status === 'pending' && <GallerySkeleton />}
-
-          {status === 'resolved' && pictures.length < totalPictures && (
-            <Button onClick={this.changePage}>Load more</Button>
-          )}
-
-          <ToastContainer autoClose={3000} theme="colored" />
-        </AppStyled>
-      </SkeletonTheme>
-    );
   }
-}
+
+  return (
+    <SkeletonTheme baseColor="#2c2c2c" highlightColor="#3d3d3d">
+      <AppStyled>
+        <Searchbar onSubmit={changeSearchInput} />
+
+        {status === 'idle' && (
+          <FirstMessage>Enter key words for image search!</FirstMessage>
+        )}
+
+        <ImageGallery pictures={pictures} />
+
+        {status === 'pending' && <GallerySkeleton />}
+
+        {status === 'resolved' && pictures.length < totalPictures && (
+          <Button onClick={changePage}>Load more</Button>
+        )}
+
+        <ToastContainer autoClose={3000} theme="colored" />
+      </AppStyled>
+    </SkeletonTheme>
+  );
+};

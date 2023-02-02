@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import {
   ImageGalleryItemImage,
   ImageGalleryItemWrap,
@@ -6,32 +5,28 @@ import {
 import { Modal } from '../Modal';
 import { createPortal } from 'react-dom';
 
+import { useState } from 'react';
+
 const modalRoot = document.querySelector('#modal-root');
 
-export class ImageGalleryItem extends Component {
-  state = {
-    showModal: false,
+export const ImageGalleryItem = ({ smPic, lgPic, tags }) => {
+  const [showModal, setShowModal] = useState(false);
+
+  const toggleModal = () => {
+    setShowModal(pS => !pS);
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
-  };
+  return (
+    <>
+      <ImageGalleryItemWrap onClick={toggleModal}>
+        <ImageGalleryItemImage src={smPic} alt={tags} />
+      </ImageGalleryItemWrap>
 
-  render() {
-    const { smPic, lgPic, tags } = this.props;
-
-    return (
-      <>
-        <ImageGalleryItemWrap onClick={this.toggleModal}>
-          <ImageGalleryItemImage src={smPic} alt={tags} />
-        </ImageGalleryItemWrap>
-
-        {this.state.showModal &&
-          createPortal(
-            <Modal toggleModal={this.toggleModal} pic={lgPic} tags={tags} />,
-            modalRoot
-          )}
-      </>
-    );
-  }
-}
+      {showModal &&
+        createPortal(
+          <Modal toggleModal={toggleModal} pic={lgPic} tags={tags} />,
+          modalRoot
+        )}
+    </>
+  );
+};

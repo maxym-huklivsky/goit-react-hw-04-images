@@ -1,50 +1,43 @@
-import { Component } from 'react';
 import { ModalStyled, Overlay } from './Modal.styled';
 import { SlClose } from 'react-icons/sl';
 import PropTypes from 'prop-types';
 
-export class Modal extends Component {
-  static propTypes = {
-    pic: PropTypes.string.isRequired,
-    tags: PropTypes.string.isRequired,
-    toggleModal: PropTypes.func.isRequired,
-  };
+import { useEffect } from 'react';
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.closeOnEsc);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.closeOnEsc);
-  }
-
-  closeOnEsc = e => {
-    if (e.code === 'Escape') {
-      this.props.toggleModal();
-    }
-  };
-
-  closeOnClickOnOverlay = e => {
+export const Modal = ({ toggleModal, pic, tags }) => {
+  const closeOnClickOnOverlay = e => {
     if (e.currentTarget === e.target) {
-      this.props.toggleModal();
+      toggleModal();
     }
   };
 
-  render() {
-    const { pic, tags, toggleModal } = this.props;
+  useEffect(() => {
+    function closeOnEsc(e) {
+      if (e.code === 'Escape') {
+        toggleModal();
+      }
+    }
 
-    return (
-      <Overlay onClick={this.closeOnClickOnOverlay}>
-        <SlClose
-          size="40"
-          onClick={toggleModal}
-          aria-label="Close big picture"
-        />
+    window.addEventListener('keydown', closeOnEsc);
 
-        <ModalStyled>
-          <img src={pic} alt={tags} />
-        </ModalStyled>
-      </Overlay>
-    );
-  }
-}
+    return () => {
+      window.removeEventListener('keydown', closeOnEsc);
+    };
+  }, [toggleModal]);
+
+  return (
+    <Overlay onClick={closeOnClickOnOverlay}>
+      <SlClose size="40" onClick={toggleModal} aria-label="Close big picture" />
+
+      <ModalStyled>
+        <img src={pic} alt={tags} />
+      </ModalStyled>
+    </Overlay>
+  );
+};
+
+Modal.propTypes = {
+  pic: PropTypes.string.isRequired,
+  tags: PropTypes.string.isRequired,
+  toggleModal: PropTypes.func.isRequired,
+};

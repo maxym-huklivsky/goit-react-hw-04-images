@@ -39,7 +39,7 @@ export const App = () => {
     console.log('search');
     reset();
     requestForPic();
-  }, [searchInput]);
+  }, [requestForPic, searchInput]);
 
   useEffect(() => {
     if (page === 1) {
@@ -48,12 +48,13 @@ export const App = () => {
 
     console.log('load more');
     requestForPic();
-  }, [page]);
+  }, [page, requestForPic]);
 
   function changePage() {
     setPage(pS => pS + 1);
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   function requestForPic() {
     setStatus('pending');
 

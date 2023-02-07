@@ -9,8 +9,7 @@ import { SkeletonTheme } from 'react-loading-skeleton';
 import { GallerySkeleton } from 'components/GallerySkeleton';
 
 import { useState, useEffect } from 'react';
-
-const root = document.querySelector('#root');
+import { useRef } from 'react';
 
 export const App = () => {
   const [searchInput, setSearchInput] = useState('');
@@ -19,10 +18,18 @@ export const App = () => {
   const [totalPictures, setTotalPictures] = useState(0);
   const [status, setStatus] = useState('idle');
 
+  const ulRef = useRef(null);
+
+  useEffect(() => {
+    ulRef.current = document.querySelector('#scroll');
+  }, []);
+
   useEffect(() => {
     if (searchInput === '') {
       return;
     }
+
+    ulRef.current.scrollIntoView({ behavior: 'smooth' });
 
     async function reset() {
       await setPage(1);
@@ -67,7 +74,6 @@ export const App = () => {
 
         if (page === 1) {
           toast.success(`По вашему запросу найдено ${totalHits} картинок`);
-          root.scrollIntoView({ behavior: 'smooth' });
         }
       })
       .catch(({ message }) => {

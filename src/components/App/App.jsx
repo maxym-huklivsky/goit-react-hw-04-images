@@ -18,70 +18,43 @@ export const App = () => {
   const [totalPictures, setTotalPictures] = useState(0);
   const [status, setStatus] = useState('idle');
 
-  const ulRef = useRef(null);
-
-  useEffect(() => {
-    ulRef.current = document.querySelector('#scroll');
-  }, []);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (searchInput === '') {
       return;
     }
 
-    ulRef.current.scrollIntoView({ behavior: 'smooth' });
+    function requestForPic() {
+      setStatus('pending');
 
-    async function reset() {
-      await setPage(1);
-      await setPictures([]);
+      fetchPic({ query: searchInput, page })
+        .then(({ hits, totalHits }) => {
+          console.log(hits);
+          console.log(totalHits);
+
+          if (hits.length === 0) {
+            return Promise.reject(
+              new Error('По вашему запросу не найдено картинок')
+            );
+          }
+
+          setPictures(pS => [...pS, ...hits]);
+          setTotalPictures(totalHits);
+          setStatus('resolved');
+
+          if (page === 1) {
+            toast.success(`По вашему запросу найдено ${totalHits} картинок`);
+          }
+        })
+        .catch(({ message }) => {
+          setStatus('rejected');
+          toast.error(message);
+        });
     }
 
-    console.log('search');
-    reset();
     requestForPic();
-  }, [requestForPic, searchInput]);
-
-  useEffect(() => {
-    if (page === 1) {
-      return;
-    }
-
-    console.log('load more');
-    requestForPic();
-  }, [page, requestForPic]);
-
-  function changePage() {
-    setPage(pS => pS + 1);
-  }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  function requestForPic() {
-    setStatus('pending');
-
-    fetchPic({ query: searchInput, page })
-      .then(({ hits, totalHits }) => {
-        console.log(hits);
-        console.log(totalHits);
-
-        if (hits.length === 0) {
-          return Promise.reject(
-            new Error('По вашему запросу не найдено картинок')
-          );
-        }
-
-        setPictures(pS => [...pS, ...hits]);
-        setTotalPictures(totalHits);
-        setStatus('resolved');
-
-        if (page === 1) {
-          toast.success(`По вашему запросу найдено ${totalHits} картинок`);
-        }
-      })
-      .catch(({ message }) => {
-        setStatus('rejected');
-        toast.error(message);
-      });
-  }
+  }, [page, searchInput]);
 
   function changeSearchInput(e) {
     e.preventDefault();
@@ -91,7 +64,10 @@ export const App = () => {
     const inputValue = value.trim();
 
     if (inputValue) {
+      setPage(1);
+      setPictures([]);
       setSearchInput(inputValue);
+      containerRef.current.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
@@ -100,7 +76,7 @@ export const App = () => {
 
   return (
     <SkeletonTheme baseColor="#2c2c2c" highlightColor="#3d3d3d">
-      <AppStyled>
+      <AppStyled ref={containerRef}>
         <Searchbar onSubmit={changeSearchInput} />
 
         {status === 'idle' && (
@@ -112,7 +88,7 @@ export const App = () => {
         {status === 'pending' && <GallerySkeleton />}
 
         {status === 'resolved' && pictures.length < totalPictures && (
-          <Button onClick={changePage}>Load more</Button>
+          <Button onClick={setPage}>Load more</Button>
         )}
 
         <ToastContainer autoClose={3000} theme="colored" />

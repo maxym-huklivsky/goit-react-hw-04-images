@@ -63,15 +63,18 @@ export const App = () => {
 
     const inputValue = value.trim();
 
-    if (inputValue) {
-      setPage(1);
-      setPictures([]);
-      setSearchInput(inputValue);
-      containerRef.current.scrollIntoView({ behavior: 'smooth' });
-      return;
+    if (!inputValue) {
+      return toast.warn('Пожалуйста, введите что-то!!!');
     }
 
-    toast.warn('Пожалуйста, введите что-то!!!');
+    if (inputValue === searchInput) {
+      return toast.warn('Вы уже ввели это!!! Введите что-то другое.');
+    }
+
+    setPage(1);
+    setPictures([]);
+    setSearchInput(inputValue);
+    containerRef.current.scrollIntoView({ behavior: 'smooth' });
   }
 
   return (
